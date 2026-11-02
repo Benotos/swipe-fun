@@ -50,7 +50,7 @@ export async function getOrder(id: string): Promise<Order | null> {
 export async function getWaitingOrders(): Promise<Order[]> {
   const ids = await redis<string[]>(["SMEMBERS", "swipe:orders"]);
   if (ids === null) {
-    return [...memoryOrders]
+    return Array.from(memoryOrders)
       .map(id => memory.get(`swipe:order:${id}`))
       .filter((value): value is string => Boolean(value))
       .map(value => JSON.parse(value) as Order)
