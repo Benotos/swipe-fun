@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
@@ -7,6 +7,34 @@ type SogoCheck = {
   status: number;
   data: unknown;
 };
+
+async function reserveDiagnosticSlot(): Promise<boolean> {
+  const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
+  const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!redisUrl || !redisToken) return false;
+
+  const script = [
+    "local count = redis.call('INCR', KEYS[1])",
+    "if count == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end",
+    "return count"
+  ].join("\n");
+
+  const response = await fetch(redisUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${redisToken}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(["EVAL", script, "1", "swipe:sogo:diagnostic:global", "60"]),
+    cache: "no-store"
+  });
+  if (!response.ok) return false;
+
+  const payload = await response.json();
+  if (payload.error) return false;
+  // Four diagnostic runs per minute; each run makes two read-only Sogo requests.
+  return Number(payload.result) <= 4;
+}
 
 async function checkEndpoint(baseUrl: string, path: string, apiKey: string): Promise<SogoCheck> {
   const response = await fetch(new URL(path, `${baseUrl.replace(/\/+$/, "")}/`), {
@@ -31,17 +59,11 @@ async function checkEndpoint(baseUrl: string, path: string, apiKey: string): Pro
 }
 
 /**
- * Read-only Sogo sandbox diagnostic.
- * It never creates an order or moves funds.
- * Protect with the existing CRON_SECRET so the sandbox API key cannot be
- * abused by anonymous visitors.
+ * Public, read-only Sogo sandbox diagnostic.
+ * Only catalogue GET requests are made; no order or payment is submitted.
+ * A shared Redis counter caps this at four runs per minute globally.
  */
-export async function GET(request: NextRequest) {
-  const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret || request.headers.get("authorization") !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export async function GET() {
   const baseUrl = process.env.SOGO_BASE_URL;
   const readKey = process.env.SOGO_GIFT_READ_KEY;
 
@@ -71,6 +93,12 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    if (!await reserveDiagnosticSlot()) {
+      return NextResponse.json({
+        error: "Sogo diagnostic rate limit reached or Redis rate limiter unavailable. Try again in a minute."
+      }, { status: 429 });
+    }
+
     const [countries, products] = await Promise.all([
       checkEndpoint(baseUrl, "gift-cards/buy/countries", readKey),
       checkEndpoint(baseUrl, "gift-cards/buy/products", readKey)
