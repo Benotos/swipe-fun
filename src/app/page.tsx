@@ -21,8 +21,7 @@ export default function Home() {
       if (!mounted || !root.current) return;
       ctx = gsap.context(() => {
         gsap.fromTo(".reveal", { y: 28, opacity: 0 }, {
-          y: 0, opacity: 1, duration: 0.85, stagger: 0.11, ease: "power3.out",
-          scrollTrigger: undefined
+          y: 0, opacity: 1, duration: 0.85, stagger: 0.11, ease: "power3.out"
         });
         gsap.to(".hero-orb", { rotate: 360, duration: 36, repeat: -1, ease: "none" });
         gsap.to(".hero-card-main", { y: -12, rotate: -3, duration: 3.8, repeat: -1, yoyo: true, ease: "sine.inOut" });
