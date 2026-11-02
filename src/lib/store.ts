@@ -152,3 +152,34 @@ export async function getInventory() {
 export function databaseConfigured() {
   return Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
 }
+
+const memoryRateLimits = new Map<string, { count: number; resetAt: number }>();
+
+export async function consumeOrderRateLimit(identifier: string): Promise<boolean> {
+  const windowSeconds = 600;
+  const limit = 10;
+  const script = [
+    "local count = redis.call('INCR', KEYS[1])",
+    "if count == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end",
+    "return count"
+  ].join("\n");
+
+  const result = await redis<number>([
+    "EVAL", script, "1",
+    `swipe:ratelimit:orders:${identifier}`,
+    String(windowSeconds)
+  ]);
+
+  if (result === null) {
+    const now = Date.now();
+    const current = memoryRateLimits.get(identifier);
+    if (!current || current.resetAt <= now) {
+      memoryRateLimits.set(identifier, { count: 1, resetAt: now + windowSeconds * 1000 });
+      return true;
+    }
+    current.count += 1;
+    return current.count <= limit;
+  }
+
+  return Number(result) <= limit;
+}
