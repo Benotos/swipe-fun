@@ -43,7 +43,7 @@ export default function Home() {
           <span className="brand-name">swipe<span>.</span>fun</span>
         </a>
         <div className="nav-center"><a href="#how">How it works</a><a href="#drop">Genesis drop</a><a href="#utility">The utility</a></div>
-        <a href="#drop" className="nav-button">Explore the drop <ArrowUpRight size={15} /></a>
+        <a href="/checkout" className="nav-button">Explore the drop <ArrowUpRight size={15} /></a>
       </nav>
 
       <section className="hero shell">
@@ -52,7 +52,7 @@ export default function Home() {
           <h1 className="reveal">Crypto should<br />buy <em>real things.</em></h1>
           <p className="hero-lede reveal">Your SOL gets you more than another token. Turn it into gift cards and everyday digital essentials. No wallet connection. No runaround.</p>
           <div className="hero-actions reveal">
-            <a className="button button-lime" href="#drop">Get early access <ArrowUpRight size={17} /></a>
+            <a className="button button-lime" href="/checkout">Get early access <ArrowUpRight size={17} /></a>
             <a className="text-link" href="#how">See how it works <ArrowDownRight size={16} /></a>
           </div>
           <div className="hero-assurance reveal"><span><ShieldCheck size={15} /> Simple Solana payments</span><i /><span>No wallet connect</span><i /><span>Digital delivery</span></div>
@@ -100,10 +100,10 @@ export default function Home() {
       </section>
 
       <section className="utility shell" id="utility">
-        <div className="utility-panel reveal"><div className="utility-copy"><div className="section-label">03 / MORE THAN A MEME</div><h2>Utility you<br /><em>can actually use.</em></h2><p>SWIPE is being built around real world purchases. The token layer is designed to reward holders with lower fees, while platform fees are planned to support buybacks. Final mechanics will be published before launch.</p><a href="#drop" className="button button-outline">Stay close <ArrowUpRight size={16} /></a></div><div className="utility-graphic"><div className="utility-orbit orbit-large" /><div className="utility-orbit orbit-small" /><div className="utility-core"><Zap size={42} fill="currentColor" /></div><div className="utility-label label-one"><Check size={12} /> REAL PURCHASES</div><div className="utility-label label-two"><Check size={12} /> HOLDER BENEFITS PLANNED</div><div className="utility-label label-three"><Globe2 size={13} /> SOLANA</div></div></div>
+        <div className="utility-panel reveal"><div className="utility-copy"><div className="section-label">03 / MORE THAN A MEME</div><h2>Utility you<br /><em>can actually use.</em></h2><p>SWIPE is being built around real world purchases. The token layer is designed to reward holders with lower fees, while platform fees are planned to support buybacks. Final mechanics will be published before launch.</p><a href="/checkout" className="button button-outline">Stay close <ArrowUpRight size={16} /></a></div><div className="utility-graphic"><div className="utility-orbit orbit-large" /><div className="utility-orbit orbit-small" /><div className="utility-core"><Zap size={42} fill="currentColor" /></div><div className="utility-label label-one"><Check size={12} /> REAL PURCHASES</div><div className="utility-label label-two"><Check size={12} /> HOLDER BENEFITS PLANNED</div><div className="utility-label label-three"><Globe2 size={13} /> SOLANA</div></div></div>
       </section>
 
-      <section className="closing shell"><div className="closing-inner reveal"><span className="section-label">THE NEXT MOVE IS YOURS</span><h2>Make your SOL<br /><em>mean something.</em></h2><a href="#drop" className="button button-lime">Explore SWIPE <ArrowUpRight size={17} /></a><span className="closing-star">✳</span></div></section>
+      <section className="closing shell"><div className="closing-inner reveal"><span className="section-label">THE NEXT MOVE IS YOURS</span><h2>Make your SOL<br /><em>mean something.</em></h2><a href="/checkout" className="button button-lime">Explore SWIPE <ArrowUpRight size={17} /></a><span className="closing-star">✳</span></div></section>
 
       <footer className="footer shell"><a href="#" className="brand"><span className="brand-symbol"><Zap size={15} fill="currentColor" /></span><span className="brand-name">swipe<span>.</span>fun</span></a><span>SPEND DIFFERENT. STAY EARLY.</span><div><a href="#how">HOW IT WORKS</a><a href="#drop">GENESIS</a></div><span>© 2026 SWIPE.FUN</span></footer>
     </main>
