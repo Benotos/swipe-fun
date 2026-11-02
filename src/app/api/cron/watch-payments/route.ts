@@ -1,18 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
-import { paymentProvider } from "@/lib/providers/payment";
-import { giftCardProvider } from "@/lib/providers/gift-cards";
+import { getWaitingOrders, saveOrder, releaseReservation } from "@/lib/store";
 
-/**
- * Payment watcher entry point. Configure a Vercel Cron schedule and CRON_SECRET.
- * The mock adapter intentionally reports no deposits. Replace it with an
- * approved Solana RPC or webhook implementation before accepting payments.
- */
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
   if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  void paymentProvider;
-  void giftCardProvider;
-  return NextResponse.json({ ok: true, mode: "mock", message: "Watcher is wired. Mock provider does not detect or confirm payments." });
+
+  try {
+    const waitingOrders = await getWaitingOrders();
+    let expired = 0;
+
+    for (const order of waitingOrders) {
+      if (Date.now() < new Date(order.expiresAt).getTime()) continue;
+      order.status = "expired";
+      await saveOrder(order);
+      await releaseReservation(order.id);
+      expired += 1;
+    }
+
+    return NextResponse.json({
+      ok: true,
+      mode: "mock",
+      checked: waitingOrders.length,
+      expired,
+      message: "Expired demo orders are cleaned up. Real Solana monitoring and gift card delivery still require provider integration."
+    }, { headers: { "Cache-Control": "no-store" } });
+  } catch {
+    return NextResponse.json({ error: "Order watcher could not complete." }, { status: 503 });
+  }
 }
