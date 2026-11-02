@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { ArrowLeft, Check, Copy, LoaderCircle, Zap } from "lucide-react";
 
-export default function OrderPage({ params }: { params: { id: string } }) {
+export default function OrderPage() {
+  const params = useParams<{ id: string }>();
   const [order, setOrder] = useState<any>(null);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
