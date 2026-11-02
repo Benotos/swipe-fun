@@ -11,20 +11,26 @@ export async function POST(request: NextRequest) {
   let reservationId: string | null = null;
 
   try {
-    const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-      || request.headers.get("x-real-ip")
+    const forwardedFor = request.headers.get("x-real-ip")
+      || request.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim()
+      || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
       || "unknown";
     const identifier = createHash("sha256").update(forwardedFor).digest("hex").slice(0, 24);
     if (!await consumeOrderRateLimit(identifier)) {
       return NextResponse.json({ error: "Too many checkout attempts. Please wait a few minutes and try again." }, { status: 429 });
     }
 
-    const contentLength = Number(request.headers.get("content-length") ?? 0);
-    if (contentLength > 2048) {
+    const rawBody = await request.text();
+    if (rawBody.length > 2048) {
       return NextResponse.json({ error: "Invalid checkout request." }, { status: 413 });
     }
 
-    const body = await request.json();
+    let body: { itemId?: unknown };
+    try {
+      body = JSON.parse(rawBody) as { itemId?: unknown };
+    } catch {
+      return NextResponse.json({ error: "Invalid checkout request." }, { status: 400 });
+    }
     if (!body || typeof body.itemId !== "string") {
       return NextResponse.json({ error: "Choose a valid gift card." }, { status: 400 });
     }
