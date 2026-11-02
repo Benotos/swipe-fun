@@ -37,6 +37,7 @@ export async function saveOrder(order: Order) {
     return;
   }
   await redis<number>(["SADD", "swipe:orders", order.id]);
+  await redis<number>(["EXPIRE", "swipe:orders", "86400"]);
 }
 
 export async function getOrder(id: string): Promise<Order | null> {
@@ -137,7 +138,7 @@ export async function getInventory() {
     redis<string>(["GET", "swipe:stock:reserved"])
   ]);
 
-  if (soldValue === null && reservedValue === null) {
+  if (!databaseConfigured()) {
     return { sold: memorySold, reserved: memoryReserved, source: "preview" as const };
   }
 
