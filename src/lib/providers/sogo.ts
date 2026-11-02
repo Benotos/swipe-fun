@@ -86,9 +86,9 @@ export async function sogoPost<T>(
     throw new Error("Sogo write integration is restricted to the sandbox until production approval.");
   }
 
-  const url = new URL(path.replace(/^\/+/, ""), \`\${base.toString().replace(/\/+$/, "")}/\`);
+  const url = new URL(path.replace(/^\/+/, ""), base.toString().replace(/\/+$/, "") + "/");
   const headers: Record<string, string> = {
-    Authorization: \`Bearer \${apiKey}\`,
+    Authorization: "Bearer " + apiKey,
     Accept: "application/json",
     "Content-Type": "application/json"
   };
@@ -111,11 +111,15 @@ export async function sogoPost<T>(
   }
 
   if (!response.ok) {
-    const message =
-      typeof payload === "object" && payload !== null && "message" in payload &&
+    let message = "Sogo API request failed with HTTP " + response.status + ".";
+    if (
+      typeof payload === "object" &&
+      payload !== null &&
+      "message" in payload &&
       typeof (payload as { message?: unknown }).message === "string"
-        ? (payload as { message: string }).message
-        : \`Sogo API request failed with HTTP \${response.status}.\`;
+    ) {
+      message = (payload as { message: string }).message;
+    }
     throw new SogoApiError(message, response.status, payload);
   }
 
