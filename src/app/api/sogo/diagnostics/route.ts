@@ -32,12 +32,14 @@ async function reserveDiagnosticSlot(): Promise<boolean> {
 
   const payload = await response.json();
   if (payload.error) return false;
-  // Four diagnostic runs per minute; each run makes two read-only Sogo requests.
   return Number(payload.result) <= 4;
 }
 
-async function checkEndpoint(baseUrl: string, path: string, apiKey: string): Promise<SogoCheck> {
-  const response = await fetch(new URL(path, `${baseUrl.replace(/\/+$/, "")}/`), {
+async function checkEndpoint(baseUrl: string, path: string, apiKey: string, params?: Record<string, string>): Promise<SogoCheck> {
+  const url = new URL(path, `${baseUrl.replace(/\/+$/, "")}/`);
+  for (const [key, value] of Object.entries(params ?? {})) url.searchParams.set(key, value);
+
+  const response = await fetch(url, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -59,9 +61,9 @@ async function checkEndpoint(baseUrl: string, path: string, apiKey: string): Pro
 }
 
 /**
- * Public, read-only Sogo sandbox diagnostic.
- * Only catalogue GET requests are made; no order or payment is submitted.
- * A shared Redis counter caps this at four runs per minute globally.
+ * Read-only Sogo sandbox diagnostic.
+ * It fetches the country list and compares buy catalogues for NG and US.
+ * It never creates an order or moves funds.
  */
 export async function GET() {
   const baseUrl = process.env.SOGO_BASE_URL;
@@ -99,17 +101,25 @@ export async function GET() {
       }, { status: 429 });
     }
 
-    const [countries, products] = await Promise.all([
+    const [countries, nigeriaProducts, usProducts] = await Promise.all([
       checkEndpoint(baseUrl, "gift-cards/buy/countries", readKey),
-      checkEndpoint(baseUrl, "gift-cards/buy/products", readKey)
+      checkEndpoint(baseUrl, "gift-cards/buy/products", readKey, { country_code: "NG" }),
+      checkEndpoint(baseUrl, "gift-cards/buy/products", readKey, { country_code: "US" })
     ]);
 
     return NextResponse.json({
       environment: "sandbox",
       readOnly: true,
-      checks: { countries, products }
+      note: "Product catalogue requests use the required country_code parameter.",
+      checks: {
+        countries,
+        productsByCountry: {
+          NG: nigeriaProducts,
+          US: usProducts
+        }
+      }
     }, {
-      status: countries.ok || products.ok ? 200 : 502,
+      status: countries.ok || nigeriaProducts.ok || usProducts.ok ? 200 : 502,
       headers: { "Cache-Control": "no-store" }
     });
   } catch {
