@@ -8,7 +8,9 @@ export type Order = {
   solAmount: number;
   depositAddress: string;
   status: OrderStatus;
-  paymentMode: "mock";
+  paymentMode: "solana" | "mock";
+  paymentSignature?: string;
+  payerAddress?: string;
   createdAt: string;
   expiresAt: string;
   giftCardCode?: string;
