@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
 
     const id = randomUUID();
     reservationId = id;
-    const reserved = await reserveInventory(id, GENESIS_TOTAL, 172800);
+    const reserved = await reserveInventory(id, GENESIS_TOTAL, 2592000);
     if (!reserved) {
       return NextResponse.json({ error: "The Genesis drop is sold out. Please check back for availability." }, { status: 409 });
     }
