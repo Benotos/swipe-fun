@@ -1,14 +1,21 @@
 import type { Order } from "@/lib/types";
 
 const memory = new Map<string, string>();
+const memoryOrders = new Set<string>();
+const memoryReservations = new Set<string>();
+let memorySold = 0;
+let memoryReserved = 0;
 
 async function redis<T>(command: string[]): Promise<T | null> {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) {
-    if (process.env.NODE_ENV === "production") throw new Error("Database is not configured. Add Upstash Redis environment variables.");
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("Database is not configured. Add Upstash Redis environment variables.");
+    }
     return null;
   }
+
   const response = await fetch(url, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
@@ -17,13 +24,19 @@ async function redis<T>(command: string[]): Promise<T | null> {
   });
   if (!response.ok) throw new Error("Database request failed");
   const payload = await response.json();
+  if (payload.error) throw new Error("Database command failed");
   return payload.result as T;
 }
 
 export async function saveOrder(order: Order) {
   const key = `swipe:order:${order.id}`;
   const result = await redis<string>(["SET", key, JSON.stringify(order), "EX", "86400"]);
-  if (result === null) memory.set(key, JSON.stringify(order));
+  if (result === null) {
+    memory.set(key, JSON.stringify(order));
+    memoryOrders.add(order.id);
+    return;
+  }
+  await redis<number>(["SADD", "swipe:orders", order.id]);
 }
 
 export async function getOrder(id: string): Promise<Order | null> {
@@ -33,22 +46,106 @@ export async function getOrder(id: string): Promise<Order | null> {
   return raw ? JSON.parse(raw) as Order : null;
 }
 
-export async function increment(key: string) {
-  const result = await redis<number>(["INCR", `swipe:${key}`]);
-  if (result === null) return 0;
-  return Number(result);
+export async function getWaitingOrders(): Promise<Order[]> {
+  const ids = await redis<string[]>(["SMEMBERS", "swipe:orders"]);
+  if (ids === null) {
+    return [...memoryOrders]
+      .map(id => memory.get(`swipe:order:${id}`))
+      .filter((value): value is string => Boolean(value))
+      .map(value => JSON.parse(value) as Order)
+      .filter(order => order.status === "waiting");
+  }
+
+  const orders = await Promise.all(ids.map(id => getOrder(id)));
+  return orders.filter((order): order is Order => Boolean(order && order.status === "waiting"));
 }
 
-export async function decrement(key: string) {
-  const result = await redis<number>(["DECR", `swipe:${key}`]);
-  if (result === null) return 0;
-  return Number(result);
+export async function reserveInventory(orderId: string, total: number, ttlSeconds: number): Promise<boolean> {
+  const script = [
+    "local sold = tonumber(redis.call('GET', KEYS[1]) or '0')",
+    "local reserved = tonumber(redis.call('GET', KEYS[2]) or '0')",
+    "if sold + reserved >= tonumber(ARGV[1]) then return 0 end",
+    "redis.call('INCR', KEYS[2])",
+    "redis.call('SET', KEYS[3], '1', 'EX', ARGV[2])",
+    "return 1"
+  ].join("\n");
+
+  const result = await redis<number>([
+    "EVAL", script, "3",
+    "swipe:stock:sold", "swipe:stock:reserved",
+    `swipe:reservation:${orderId}`,
+    String(total), String(ttlSeconds)
+  ]);
+  if (result === null) {
+    if (memorySold + memoryReserved >= total) return false;
+    memoryReserved += 1;
+    memoryReservations.add(orderId);
+    return true;
+  }
+  return Number(result) === 1;
 }
 
-export async function getCount(key: string) {
-  const result = await redis<string>(["GET", `swipe:${key}`]);
-  if (result === null) return 0;
-  return Number(result ?? 0);
+export async function releaseReservation(orderId: string): Promise<boolean> {
+  const script = [
+    "if redis.call('EXISTS', KEYS[1]) == 0 then return 0 end",
+    "redis.call('DECR', KEYS[2])",
+    "redis.call('DEL', KEYS[1])",
+    "return 1"
+  ].join("\n");
+
+  const result = await redis<number>([
+    "EVAL", script, "2",
+    `swipe:reservation:${orderId}`, "swipe:stock:reserved"
+  ]);
+  if (result === null) {
+    if (!memoryReservations.has(orderId)) return false;
+    memoryReservations.delete(orderId);
+    memoryReserved = Math.max(0, memoryReserved - 1);
+    return true;
+  }
+  return Number(result) === 1;
+}
+
+export async function completeReservation(orderId: string): Promise<boolean> {
+  const script = [
+    "if redis.call('EXISTS', KEYS[1]) == 0 then return 0 end",
+    "redis.call('DECR', KEYS[2])",
+    "redis.call('INCR', KEYS[3])",
+    "redis.call('DEL', KEYS[1])",
+    "return 1"
+  ].join("\n");
+
+  const result = await redis<number>([
+    "EVAL", script, "3",
+    `swipe:reservation:${orderId}`,
+    "swipe:stock:reserved",
+    "swipe:stock:sold"
+  ]);
+  if (result === null) {
+    if (!memoryReservations.has(orderId)) return false;
+    memoryReservations.delete(orderId);
+    memoryReserved = Math.max(0, memoryReserved - 1);
+    memorySold += 1;
+    return true;
+  }
+  return Number(result) === 1;
+}
+
+export async function getInventory() {
+  const [soldValue, reservedValue] = await Promise.all([
+    redis<string>(["GET", "swipe:stock:sold"]),
+    redis<string>(["GET", "swipe:stock:reserved"])
+  ]);
+
+  if (soldValue === null && reservedValue === null) {
+    return { sold: memorySold, reserved: memoryReserved, source: "preview" as const };
+  }
+
+  return {
+    sold: Math.max(0, Number(soldValue ?? 0)),
+    reserved: Math.max(0, Number(reservedValue ?? 0)),
+    source: "database" as const
+  };
 }
 
 export function databaseConfigured() {
