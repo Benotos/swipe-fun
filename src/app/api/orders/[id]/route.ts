@@ -3,9 +3,10 @@ import { getOrder, saveOrder, releaseReservation } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_request: Request, context: { params: { id: string } }) {
+export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const order = await getOrder(context.params.id);
+    const { id } = await context.params;
+    const order = await getOrder(id);
     if (!order) return NextResponse.json({ error: "Order not found." }, { status: 404 });
 
     if (order.status === "waiting" && Date.now() >= new Date(order.expiresAt).getTime()) {
