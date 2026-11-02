@@ -30,14 +30,14 @@ async function redis<T>(command: string[]): Promise<T | null> {
 
 export async function saveOrder(order: Order) {
   const key = `swipe:order:${order.id}`;
-  const result = await redis<string>(["SET", key, JSON.stringify(order), "EX", "86400"]);
+  const result = await redis<string>(["SET", key, JSON.stringify(order), "EX", "2592000"]);
   if (result === null) {
     memory.set(key, JSON.stringify(order));
     memoryOrders.add(order.id);
     return;
   }
   await redis<number>(["SADD", "swipe:orders", order.id]);
-  await redis<number>(["EXPIRE", "swipe:orders", "86400"]);
+  await redis<number>(["EXPIRE", "swipe:orders", "2592000"]);
 }
 
 export async function getOrder(id: string): Promise<Order | null> {
