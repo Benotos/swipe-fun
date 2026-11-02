@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Check, ChevronRight, CircleDot, CreditCard, Gift, Globe2, MoveUpRight, ShieldCheck, Sparkles, Wallet, Zap } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Check, CreditCard, Gift, Globe2, MoveUpRight, ShieldCheck, Sparkles, Wallet, Zap } from "lucide-react";
+import LiveCounter from "@/components/LiveCounter";
 
 const steps = [
   { number: "01", title: "Choose what you want", body: "Pick a digital gift card from the catalog. See the value and exact SOL amount before you pay.", icon: Gift },
@@ -86,14 +87,8 @@ export default function Home() {
         <div className="section-top reveal"><span className="section-label">01 / THE GENESIS DROP</span><span className="section-side">A LIMITED FIRST EDITION <ArrowUpRight size={13} /></span></div>
         <div className="drop-layout">
           <div className="drop-copy reveal"><div className="drop-kicker"><span className="status-dot" /> THE FIRST 500</div><h2>Small supply.<br /><span>Real utility.</span></h2><p>We are starting with a focused first batch. 500 numbered spots. One simple idea: make spending SOL feel as easy as spending anything else.</p><a href="#how" className="under-link">Understand the drop <ArrowUpRight size={15} /></a></div>
-          <div className="stock-card reveal">
-            <div className="stock-head"><span><span className="status-dot" /> GENESIS INVENTORY</span><span className="stock-tag">LIMITED RELEASE</span></div>
-            <div className="stock-main"><div><strong>500</strong><span>ITEMS IN FIRST BATCH</span></div><div className="stock-art"><div className="stock-ring ring-a" /><div className="stock-ring ring-b" /><Zap size={30} fill="currentColor" /></div></div>
-            <div className="stock-track"><span /></div>
-            <div className="stock-foot"><span>500 AVAILABLE</span><span>LIVE COUNTER CONNECTS BEFORE LAUNCH</span></div>
-            <div className="stock-cta"><span>FIRST COME. FIRST SWIPED.</span><span className="stock-lock"><CircleDot size={14} /> DROP PREVIEW</span></div>
-          </div>
-        </div>
+          <div className="stock-card reveal"><LiveCounter /></div>
+       </div>
       </section>
 
       <section className="how shell" id="how">
