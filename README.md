@@ -75,7 +75,7 @@ Implement `GiftCardProvider` in `src/lib/providers/gift-cards.ts`. Fulfilment mu
 
 ## Scheduled cleanup
 
-Vercel Cron calls `/api/cron/watch-payments` every five minutes. Configure `CRON_SECRET` in Vercel. This job only expires stale demo orders; it does not monitor Solana payments until a real payment provider is integrated.
+Vercel Hobby allows one scheduled Cron run per day, so `vercel.json` calls `/api/cron/watch-payments` daily. Configure `CRON_SECRET` in Vercel. Orders also expire when their order page is opened. The scheduled job only cleans up stale demo orders; it does not monitor Solana payments until a real payment provider is integrated.
 
 ## Important
 
