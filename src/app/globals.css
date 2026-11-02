@@ -105,3 +105,5 @@ a{color:inherit;text-decoration:none}
 .order-page-shell{max-width:700px}.order-page-title{margin:20px 0 35px}.order-detail{margin-top:15px}.spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:760px){.checkout-grid{grid-template-columns:1fr}.checkout-shell{padding-top:25px}.checkout-panel{padding:19px}.payment-empty{min-height:220px}.brand-options{grid-template-columns:repeat(3,1fr)}.checkout-nav{padding:0 20px}}
 @media(max-width:420px){.checkout-heading h1,.order-page-title{font-size:52px;letter-spacing:-3px}.brand-option{font-size:8px}.checkout-panel-head{font-size:8px}.checkout-footer{font-size:7px}}
+
+.stock-card .counter-button{pointer-events:auto;cursor:pointer;text-decoration:none}
