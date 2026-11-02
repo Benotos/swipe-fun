@@ -1,0 +1,26 @@
+import { NextResponse } from "next/server";
+import { getOrder, saveOrder, decrement } from "@/lib/store";
+
+export const dynamic = "force-dynamic";
+
+export async function GET(_request: Request, context: { params: { id: string } }) {
+  try {
+    const order = await getOrder(context.params.id);
+    if (!order) return NextResponse.json({ error: "Order not found." }, { status: 404 });
+
+    if (order.status === "waiting" && Date.now() > new Date(order.expiresAt).getTime()) {
+      order.status = "expired";
+      await saveOrder(order);
+      await decrement("stock:reserved");
+    }
+
+    return NextResponse.json({
+      id: order.id, status: order.status, item: { brand: order.brand, valueUsd: order.valueUsd },
+      solAmount: order.solAmount, expiresAt: order.expiresAt,
+      giftCardCode: order.status === "delivered" ? order.giftCardCode : undefined,
+      failureReason: order.failureReason, paymentMode: order.paymentMode
+    }, { headers: { "Cache-Control": "no-store" } });
+  } catch {
+    return NextResponse.json({ error: "Unable to retrieve order." }, { status: 503 });
+  }
+}
