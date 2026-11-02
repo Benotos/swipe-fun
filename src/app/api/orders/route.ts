@@ -1,8 +1,8 @@
-import { randomUUID } from "crypto";
+import { createHash, randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { CATALOG, PRICE_LOCK_SECONDS, GENESIS_TOTAL } from "@/lib/catalog";
 import { paymentProvider } from "@/lib/providers/payment";
-import { reserveInventory, releaseReservation, saveOrder } from "@/lib/store";
+import { consumeOrderRateLimit, reserveInventory, releaseReservation, saveOrder } from "@/lib/store";
 import type { Order } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +11,19 @@ export async function POST(request: NextRequest) {
   let reservationId: string | null = null;
 
   try {
+    const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+      || request.headers.get("x-real-ip")
+      || "unknown";
+    const identifier = createHash("sha256").update(forwardedFor).digest("hex").slice(0, 24);
+    if (!await consumeOrderRateLimit(identifier)) {
+      return NextResponse.json({ error: "Too many checkout attempts. Please wait a few minutes and try again." }, { status: 429 });
+    }
+
+    const contentLength = Number(request.headers.get("content-length") ?? 0);
+    if (contentLength > 2048) {
+      return NextResponse.json({ error: "Invalid checkout request." }, { status: 413 });
+    }
+
     const body = await request.json();
     if (!body || typeof body.itemId !== "string") {
       return NextResponse.json({ error: "Choose a valid gift card." }, { status: 400 });
