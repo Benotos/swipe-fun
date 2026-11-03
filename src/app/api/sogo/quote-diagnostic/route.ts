@@ -46,7 +46,7 @@ export async function GET() {
       product_id: 5,
       country_code: "US",
       recipient_denomination: 10
-    });
+    }, undefined, "read");
 
     return NextResponse.json({
       provider: "sogo",
