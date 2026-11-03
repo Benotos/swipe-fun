@@ -68,13 +68,17 @@ export async function sogoGet<T>(
 export async function sogoPost<T>(
   path: string,
   body: Record<string, unknown>,
-  idempotencyKey?: string
+  idempotencyKey?: string,
+  credential: "read" | "write" = "write"
 ): Promise<{ status: number; data: T }> {
   const baseUrl = process.env.SOGO_BASE_URL;
-  const apiKey = process.env.SOGO_SECRET_KEY;
+  const apiKey = credential === "read"
+    ? process.env.SOGO_GIFT_READ_KEY
+    : process.env.SOGO_SECRET_KEY;
 
   if (!baseUrl || !apiKey) {
-    throw new Error("Sogo write integration is not configured. Missing SOGO_BASE_URL or SOGO_SECRET_KEY.");
+    const requiredVariable = credential === "read" ? "SOGO_GIFT_READ_KEY" : "SOGO_SECRET_KEY";
+    throw new Error("Sogo " + credential + " integration is not configured. Missing " + requiredVariable + ".");
   }
 
   const base = new URL(baseUrl);
