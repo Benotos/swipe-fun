@@ -224,3 +224,37 @@ export async function releaseSogoWebhookEvent(eventId: string) {
   }
   await redis<number>(["DEL", "swipe:sogo:webhook:event:" + eventId]);
 }
+
+
+export type SogoWebhookObservation = {
+  eventId: string;
+  event: string;
+  reference: string;
+  transactionId: string | null;
+  status: string | null;
+  failureReason: string | null;
+  receivedAt: string;
+};
+
+export async function saveSogoWebhookObservation(observation: SogoWebhookObservation) {
+  const key = "swipe:sogo:webhook:observation:" + observation.reference;
+  const result = await redis<string>(["SET", key, JSON.stringify(observation), "EX", "604800"]);
+  if (result === null) memory.set(key, JSON.stringify(observation));
+}
+
+export async function getSogoWebhookObservation(reference: string): Promise<SogoWebhookObservation | null> {
+  const key = "swipe:sogo:webhook:observation:" + reference;
+  const result = await redis<string>(["GET", key]);
+  const raw = result === null ? memory.get(key) ?? null : result;
+  return raw ? JSON.parse(raw) as SogoWebhookObservation : null;
+}
+
+export async function setLatestSogoDiagnosticReference(reference: string) {
+  const result = await redis<string>(["SET", "swipe:sogo:webhook:diagnostic:latest", reference, "EX", "604800"]);
+  if (result === null) memory.set("swipe:sogo:webhook:diagnostic:latest", reference);
+}
+
+export async function getLatestSogoDiagnosticReference(): Promise<string | null> {
+  const result = await redis<string>(["GET", "swipe:sogo:webhook:diagnostic:latest"]);
+  return result === null ? memory.get("swipe:sogo:webhook:diagnostic:latest") ?? null : result;
+}
