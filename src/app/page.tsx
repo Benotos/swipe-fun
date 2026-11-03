@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { ArrowDownRight, ArrowUpRight, Check, CreditCard, Gift, Globe2, MoveUpRight, ShieldCheck, Sparkles, Wallet, Zap } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowDownRight, ArrowUpRight, Check, Copy, CreditCard, Gift, Globe2, MoveUpRight, ShieldCheck, Sparkles, Wallet, Zap } from "lucide-react";
 import LiveCounter from "@/components/LiveCounter";
 
 const steps = [
@@ -11,9 +11,20 @@ const steps = [
 ];
 
 const brands = ["AMAZON", "STEAM", "UBER", "PLAYSTATION", "APPLE"];
+const SWIPE_TOKEN_CA = "2zCEgd1ntVwVEhYkpBE9csGVQxnuE8pmAWHJYkVupump";
 
 export default function Home() {
   const root = useRef<HTMLElement>(null);
+  const [caCopied, setCaCopied] = useState(false);
+
+  async function copyTokenAddress() {
+    try {
+      await navigator.clipboard.writeText(SWIPE_TOKEN_CA);
+      setCaCopied(true);
+    } catch {
+      setCaCopied(false);
+    }
+  }
 
   useEffect(() => {
     let ctx: { revert: () => void } | undefined;
@@ -54,6 +65,17 @@ export default function Home() {
           <div className="hero-actions reveal">
             <a className="button button-lime" href="/checkout">Get early access <ArrowUpRight size={17} /></a>
             <a className="text-link" href="#how">See how it works <ArrowDownRight size={16} /></a>
+          </div>
+          <div className="token-ca reveal">
+            <div className="token-ca-heading"><span className="token-ca-dot" /> SWIPE TOKEN <span className="token-ca-network">SOLANA</span></div>
+            <div className="token-ca-row">
+              <code title={SWIPE_TOKEN_CA}>{SWIPE_TOKEN_CA}</code>
+              <button type="button" onClick={copyTokenAddress} aria-label="Copy SWIPE token contract address">
+                {caCopied ? <Check size={14} /> : <Copy size={14} />}
+                {caCopied ? "COPIED" : "COPY CA"}
+              </button>
+            </div>
+            <span className="token-ca-caption">OFFICIAL CONTRACT ADDRESS</span>
           </div>
           <div className="hero-assurance reveal"><span><ShieldCheck size={15} /> Simple Solana payments</span><i /><span>No wallet connect</span><i /><span>Digital delivery</span></div>
         </div>
