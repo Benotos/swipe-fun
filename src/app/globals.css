@@ -107,3 +107,16 @@ a{color:inherit;text-decoration:none}
 @media(max-width:420px){.checkout-heading h1,.order-page-title{font-size:52px;letter-spacing:-3px}.brand-option{font-size:8px}.checkout-panel-head{font-size:8px}.checkout-footer{font-size:7px}}
 
 .stock-card .counter-button{pointer-events:auto;cursor:pointer;text-decoration:none}
+
+
+/* SWIPE token contract address */
+.token-ca{width:min(100%,475px);margin-top:25px;padding:14px 15px;background:linear-gradient(115deg,#c9ff650d,#ffffff04);border:1px solid #c9ff6538;position:relative}
+.token-ca-heading{display:flex;align-items:center;gap:8px;color:#dce8d3;font:500 8px var(--mono);letter-spacing:1.2px}
+.token-ca-dot{width:6px;height:6px;border-radius:50%;background:var(--lime);box-shadow:0 0 10px #c9ff6580}
+.token-ca-network{margin-left:auto;padding:5px 7px;border:1px solid #c9ff6535;color:var(--lime);font-size:7px}
+.token-ca-row{display:flex;align-items:center;gap:10px;margin-top:12px;min-width:0}
+.token-ca-row code{flex:1;min-width:0;overflow-wrap:anywhere;color:#c4d0be;font:9px/1.6 var(--mono);letter-spacing:.1px}
+.token-ca-row button{flex:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 10px;border:1px solid #c9ff6550;border-radius:3px;background:#c9ff6510;color:var(--lime);font:700 8px var(--mono);letter-spacing:.5px;cursor:pointer;transition:background .2s,border-color .2s}
+.token-ca-row button:hover{background:#c9ff6520;border-color:var(--lime)}
+.token-ca-caption{display:block;margin-top:9px;color:#778473;font:7px var(--mono);letter-spacing:1px}
+@media(max-width:620px){.token-ca{margin-top:22px;padding:12px}.token-ca-row{align-items:flex-start}.token-ca-row code{font-size:8px}.token-ca-row button{padding:8px;font-size:7px}}
