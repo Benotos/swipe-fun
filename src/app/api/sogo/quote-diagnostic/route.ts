@@ -45,7 +45,8 @@ export async function GET() {
     const result = await sogoPost<unknown>("gift-cards/buy/calculate", {
       product_id: 5,
       country_code: "US",
-      recipient_denomination: 10
+      amount: 10,
+      quantity: 1
     }, undefined, "read");
 
     return NextResponse.json({
@@ -55,7 +56,8 @@ export async function GET() {
       request: {
         product_id: 5,
         country_code: "US",
-        recipient_denomination: 10
+        amount: 10,
+        quantity: 1
       },
       status: result.status,
       data: result.data,
