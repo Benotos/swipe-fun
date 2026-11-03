@@ -183,3 +183,44 @@ export async function consumeOrderRateLimit(identifier: string): Promise<boolean
 
   return Number(result) <= limit;
 }
+
+
+const memorySogoEvents = new Set<string>();
+
+export async function linkSogoReference(reference: string, orderId: string) {
+  const key = "swipe:sogo:reference:" + reference;
+  const result = await redis<string>(["SET", key, orderId, "EX", "2592000"]);
+  if (result === null) memory.set(key, orderId);
+}
+
+export async function getOrderIdBySogoReference(reference: string): Promise<string | null> {
+  const key = "swipe:sogo:reference:" + reference;
+  const result = await redis<string>(["GET", key]);
+  return result === null ? memory.get(key) ?? null : result;
+}
+
+export async function claimSogoWebhookEvent(eventId: string): Promise<boolean> {
+  if (!databaseConfigured()) {
+    if (memorySogoEvents.has(eventId)) return false;
+    memorySogoEvents.add(eventId);
+    return true;
+  }
+
+  const result = await redis<string>([
+    "SET",
+    "swipe:sogo:webhook:event:" + eventId,
+    "processed",
+    "NX",
+    "EX",
+    "2592000"
+  ]);
+  return result === "OK";
+}
+
+export async function releaseSogoWebhookEvent(eventId: string) {
+  if (!databaseConfigured()) {
+    memorySogoEvents.delete(eventId);
+    return;
+  }
+  await redis<number>(["DEL", "swipe:sogo:webhook:event:" + eventId]);
+}
