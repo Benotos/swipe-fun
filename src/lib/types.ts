@@ -15,4 +15,9 @@ export type Order = {
   expiresAt: string;
   giftCardCode?: string;
   failureReason?: string;
+  sogoReference?: string;
+  sogoTransactionId?: string;
+  sogoStatus?: "processing" | "completed" | "failed" | "refunded" | "cancelled";
+  sogoFailureReason?: string;
+  sogoUpdatedAt?: string;
 };
