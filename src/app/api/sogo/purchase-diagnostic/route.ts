@@ -18,7 +18,7 @@ async function reserveSandboxPurchase(): Promise<boolean> {
       Authorization: "Bearer " + redisToken,
       "Content-Type": "application/json"
     },
-    body: JSON.stringify(["SET", "swipe:sogo:purchase-diagnostic:v1", "reserved", "NX"]),
+    body: JSON.stringify(["SET", "swipe:sogo:purchase-diagnostic:v1", "reserved", "NX", "EX", "60"]),
     cache: "no-store"
   });
   if (!response.ok) return false;
