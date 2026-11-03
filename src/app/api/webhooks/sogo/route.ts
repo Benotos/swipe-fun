@@ -5,7 +5,8 @@ import {
   getOrderIdBySogoReference,
   getOrder,
   releaseSogoWebhookEvent,
-  saveOrder
+  saveOrder,
+  saveSogoWebhookObservation
 } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
@@ -87,10 +88,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true, ignored: true }, { status: 200 });
     }
 
-    // Ignore events for transactions that are not linked to a SWIPE.FUN order.
+    // Keep a minimal audit record for sandbox diagnostics, including references
+    // that are not yet linked to a customer order. Never store gift-card codes.
+    await saveSogoWebhookObservation({
+      eventId,
+      event: eventType,
+      reference,
+      transactionId: transaction.id ?? null,
+      status: transaction.status ?? null,
+      failureReason: transaction.failure_reason ?? null,
+      receivedAt: new Date().toISOString()
+    });
+
     const orderId = await getOrderIdBySogoReference(reference);
     if (!orderId) {
-      return NextResponse.json({ received: true, ignored: true }, { status: 200 });
+      return NextResponse.json({ received: true, observed: true }, { status: 200 });
     }
 
     const order = await getOrder(orderId);
